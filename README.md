@@ -72,7 +72,7 @@ need to create a serializer for `director` as we did for `movies`:
 $ rails g serializer director
 ```
 
-We can then add the desired attributes to the `director_serializer` file:
+We can then add the desired attributes to the `directors_serializer` file:
 
 ```rb
 # app/serializers/director_serializer.rb
@@ -84,10 +84,8 @@ end
 Now if you navigate to `/directors` or `/directors/:id` you will see that we're
 only displaying the desired attributes.
 
-## Serializing a One-to-Many Association
-
-Let's take a look at our new `Movie` index route. Now that we've removed the
-`director` and `female_director` attributes, the JSON for `movies` no longer
+Next, let's take a look at our new `Movie` index route. Now that we've removed
+the `director` and `female_director` attributes, the JSON for `movies` no longer
 includes any information about director. We need to figure out how to add the
 information about each movie's associated director to the JSON being returned by
 the `movies` serializer. AMS allows us to do this using the same macros in the
@@ -177,78 +175,6 @@ that in the example above: Rails has used the `MovieSerializer` to render the
 `movie` JSON, so all of the attributes we listed in that serializer are rendered
 in the `Director`'s `index` and `show` routes.
 
-## Serializing a Many-to-Many Association
-
-Our Movie example uses a one-to-many association (directors have many movies and
-movies belong to a director), but you you can also use Active Model Serializers
-with a many-to-many association.
-
-For example, if we had an app with `Article` and `Tag` models, we could create a
-join table and set up `has_many :through` associations for both models:
-
-```rb
-# app/models/article.rb
-class Article < ApplicationRecord
-  has_many :article_tags
-  has_many :tags, through: :article_tags
-end
-
-# app/models/article_tag.rb
-class ArticleTag < ApplicationRecord
-  belongs_to :article
-  belongs_to :tag
-end
-
-# app/models/tag.rb
-class Tag < ApplicationRecord
-  has_many :article_tags
-  has_many :articles, through: :article_tags
-end
-```
-
-Then, if we want the JSON for `Article` to include a list of the article's tags,
-we would simply use `has_many :tags` in our `ArticleSerializer`:
-
-```rb
-# app/serializers/article_serializer.rb
-class ArticleSerializer < ActiveModel::Serializer
-  attributes :id, :title, :author, :content
-
-  has_many :tags
-end
-```
-
-Because the `has_many :through` association is defined in the model files, Rails
-will know to nest a list of each article's tags in the JSON that's being
-returned.
-
-## Adding Custom Serializers
-
-Let's return to our Movie example. We have successfully set up our Director
-serializer to include a list of the director's movies in the JSON that's
-returned:
-
-```json
-{
-  "id": 1,
-  "name": "Steven Spielberg",
-  "birthplace": "Cincinnati, OH",
-  "female_director": false,
-  "movies": [
-    {
-      "id": 1,
-      "title": "The Color Purple",
-      "year": 1985,
-      "length": 154,
-      "description": "Whoopi Goldberg brings Alice Walker's Pulitzer Prize-winning feminist novel to life as Celie, a Southern woman who suffered abuse over decades. A project brought to a hesitant Steven Spielberg by producer Quincy Jones, the film marks Spielberg's first female lead.",
-      "poster_url": "https://pisces.bbystatic.com/image2/BestBuy_US/images/products/3071/3071213_so.jpg",
-      "category": "Drama",
-      "discount": false
-    }
-  ]
-}
-```
-
 With only one Steven Spielberg movie in our data, including all that information
 isn't too unreasonable. But what happens when we add the rest of his movies to
 our database? We may decide we don't need to include **all** the details of
@@ -283,9 +209,9 @@ class DirectorSerializer < ActiveModel::Serializer
 end
 ```
 
-Rails is still using `DirectorSerializer` to render the JSON for the director,
-but now `DirectorSerializer` is passing along the request for the director's
-movies to the new, simplified serializer.
+Rails is still using `DirectorSerializer` to render the JSON, but now
+`DirectorSerializer` is passing the data request along to the new, simplified
+serializer.
 
 Now if you refresh the page, you should see the following:
 
@@ -491,23 +417,12 @@ To summarize:
 - To customize the JSON returned for a resource, create a **serializer** for
   that resource and list the desired attributes.
 - The serializer is used **implicitly** by Rails based on naming conventions; to
-  override this, custom serializers can be passed **explicitly**.
+  override this, custom serializers can be **explicitly** passed in the
+  controller.
 - AMS enables the use of the `belongs_to` and `has_many` macros in serializers
   to render associated data; these macros should be used sparingly.
 - By default, AMS will only nest associations one level deep in the serialized
-  JSON. To override this, the `include` option can be used.
-
-## Check For Understanding
-
-Before you move on, make sure you can answer the following questions:
-
-1. If we have `Recipe` and `Ingredient` resources and we want to nest
-   ingredients under recipes in the json we're returning, in which file would we
-   use the `has_many` macro? In which file would we use the `belongs_to` macro?
-2. If we want to specify a custom serializer for the parent resource (`Recipe`),
-   in which file would we do that? In which file would we specify a custom
-   serializer for the child resource (`Ingredient`)?
-3. In which file do we use the `include` keyword to set up deep nesting?
+  JSON. To override this, the `include` option can be used in the controller.
 
 ## Resources
 
